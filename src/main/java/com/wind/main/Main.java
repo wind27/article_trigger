@@ -19,12 +19,14 @@ import org.springframework.test.context.junit4.SpringJUnit4ClassRunner;
 import com.wind.commons.Constant;
 import com.wind.commons.Constant.ArticleFrom;
 import com.wind.commons.Constant.ArticleHomeUrl;
+import com.wind.commons.Constant.ArticleStatus;
 import com.wind.commons.ServiceResult;
 import com.wind.entity.Link;
 import com.wind.service.ArticleLinkService;
+import com.wind.service.ArticleService;
 import com.wind.service.IdsService;
 import com.wind.service.LinkService;
-import com.wind.utils.CSNDArticleThread;
+import com.wind.utils.ArticleThread;
 
 @RunWith(SpringJUnit4ClassRunner.class)
 @ContextConfiguration(locations={"file:target/classes/applicationContext*.xml"})
@@ -37,12 +39,16 @@ public class Main {
 	ArticleLinkService articleLinkService;
 	
 	@Resource
+	ArticleService articleService;
+	
+	@Resource
 	IdsService idsService;
 	
 	public static int linkIsParse = 1;
 	public static int threadStartNum = 0;
 	public static int threadEndNum = 0;
-	public static boolean linkFlag = false;
+	public static boolean linkLockStatus = false;
+	public static boolean articleLockStatus = false;
 	
 	ExecutorService pool = Executors.newFixedThreadPool(20);
 	@Test
@@ -61,7 +67,6 @@ public class Main {
 			linkList.add(link);
 			linkService.batchAdd(linkList);
 		}
-		System.out.println(linkCount);
 		while(threadEndNum<=threadStartNum) {
 			StringBuffer sb = new StringBuffer();
 			sb.append("****************************");
@@ -78,11 +83,11 @@ public class Main {
 			params.put("plimit", limit);
 			ServiceResult<Link> linkResult = linkService.find(params);
 			if(!linkResult.getList().isEmpty()) {
-				runThreadPool(linkResult.getList());
+				startThreadPool(linkResult.getList());
 			}
 			start += limit;
 		}
-		System.out.println("threadStartNum: "+threadStartNum+", threadEndNum: "+threadEndNum +", 程序跑完！！！");
+		logger.info("threadStartNum: "+threadStartNum+", threadEndNum: "+threadEndNum +", 程序跑完！！！");
 		try {
 			Thread.sleep(1000);
 		} catch (InterruptedException e) {
@@ -90,7 +95,13 @@ public class Main {
 		}
 	}
 	
-	public void runThreadPool(List<Link> LinkList) {
+	/**
+	 * 启动线程池
+	 * 
+	 * @author qianchun  @date 2016年3月30日 下午4:02:52
+	 * @param LinkList
+	 */
+	public void startThreadPool(List<Link> LinkList) {
 		if(LinkList!=null) {
 			for(int i=0; i<LinkList.size(); i++) {
 				Link tmp = LinkList.get(i);
@@ -103,7 +114,7 @@ public class Main {
 						}
 					} 
 					threadStartNum += 1;
-					Thread t = new Thread(new CSNDArticleThread(linkService, articleLinkService, tmp));
+					Thread t = new Thread(new ArticleThread(linkService, articleLinkService, articleService, tmp));
 					pool.execute(t);
 				}
 			}

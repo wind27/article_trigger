@@ -75,24 +75,44 @@ public class IdsService {
 				doc.put("name", "article");
 				doc.put("next_index", 1l);
 				coll.insertOne(doc);
+				
+				Document urlIndexDoc = new Document();
+				urlIndexDoc.put("original_link", 1);
+				urlIndexDoc.put("unique", true);
+				coll.createIndex(urlIndexDoc);
 			}
 			if(!linkFlag) {
 				Document doc = new Document();
 				doc.put("name", "link");
 				doc.put("next_index", 1l);
 				coll.insertOne(doc);
+				
+				Document urlIndexDoc = new Document();
+				urlIndexDoc.put("url", 1);
+				urlIndexDoc.put("unique", true);
+				coll.createIndex(urlIndexDoc);
 			}
 			if(!articleLinkFlag) {
 				Document doc = new Document();
 				doc.put("name", "article_link");
 				doc.put("next_index", 1l);
 				coll.insertOne(doc);
+				
+				Document urlIndexDoc = new Document();
+				urlIndexDoc.put("url", 1);
+				urlIndexDoc.put("unique", true);
+				coll.createIndex(urlIndexDoc);
 			}
 			if(!commentFlag) {
 				Document doc = new Document();
 				doc.put("name", "comment");
 				doc.put("next_index", 1l);
 				coll.insertOne(doc);
+				
+//				Document urlIndexDoc = new Document();
+//				urlIndexDoc.put("url", 1);
+//				urlIndexDoc.put("unique", true);
+//				coll.createIndex(urlIndexDoc);
 			}
 			return ;
 		} catch (Exception e) {

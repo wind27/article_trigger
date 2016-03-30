@@ -12,7 +12,6 @@ public class Article implements Serializable {
     private static final long serialVersionUID = 1L;
     
     private long id;
-    private long originalId;
     private String tags;//标签
     private String from;//来源：csdn,
     private String title;//标题
@@ -124,11 +123,5 @@ public class Article implements Serializable {
 	}
 	public void setOriginalLink(String originalLink) {
 		this.originalLink = originalLink;
-	}
-	public long getOriginalId() {
-		return originalId;
-	}
-	public void setOriginalId(long originalId) {
-		this.originalId = originalId;
 	}
 }

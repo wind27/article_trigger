@@ -3,7 +3,9 @@ package com.wind.utils;
 import java.util.HashMap;
 import java.util.Map;
 
+import org.apache.commons.lang3.StringUtils;
 import org.htmlparser.Node;
+import org.htmlparser.NodeFilter;
 import org.htmlparser.Parser;
 import org.htmlparser.filters.AndFilter;
 import org.htmlparser.filters.HasAttributeFilter;
@@ -95,7 +97,7 @@ public class CSDNBlogUtil {
 		article.setTags("tags");
 		article.setOriginalLink(url);
 		article.setTitle(resultMap.get("title"));
-		article.setDesc(resultMap.get("content"));
+		article.setDesc(getDesc(resultMap.get("content")));
 		article.setContent(resultMap.get("content"));
 		article.setFrom(ArticleFrom.CSDNBLOGS);
 		
@@ -114,8 +116,50 @@ public class CSDNBlogUtil {
 		
 		return article;
 	}
+	
+	/**
+	 * 解析 desc
+	 * 
+	 * @author qianchun  @date 2016年3月30日 下午4:00:41
+	 * @param content
+	 * @return
+	 */
+	public static String getDesc(String content) {
+		StringBuffer sb = new StringBuffer();
+		NodeList nodes = null;
+		try {
+			Parser linkParser = new Parser(content);
+			nodes = linkParser.extractAllNodesThatMatch(new NodeFilter() {
+				public boolean accept(Node node) {
+					return true;
+			    }
+			});
+		} catch (ParserException e) {
+			e.printStackTrace();
+			logger.error("解析 desc 异常");
+			return "";
+		}
+		
+		if(nodes!=null && nodes.size()>0) {
+			for(int i=0; i<nodes.size(); i++) {
+				Node node = nodes.elementAt(i);
+				if(node==null) {
+					continue;
+				}
+				String text = node.toPlainTextString().trim(); 
+				if(sb.length()<120 || !StringUtils.isBlank(text) || !text.trim().startsWith("转载地址")) {
+					sb.append(text.replaceAll("\\s*", ""));
+				}
+			}
+		}
+		if(sb.toString().length()>200) {
+			return sb.toString().substring(0, 200);
+		} else {
+			return sb.toString();
+		}
+	}
 	public static void main(String[] args) {
-		Article article = getArticle("http://blog.csdn.net/mr_tank_/article/details/17454315");
-		System.out.println(JSONObject.fromObject(article));
+		String url = "http://blog.csdn.net/u011680118/article/details/51011220";
+		getArticle(url);
 	}
 }
