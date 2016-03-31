@@ -19,7 +19,6 @@ import org.springframework.test.context.junit4.SpringJUnit4ClassRunner;
 import com.wind.commons.Constant;
 import com.wind.commons.Constant.ArticleFrom;
 import com.wind.commons.Constant.ArticleHomeUrl;
-import com.wind.commons.Constant.ArticleStatus;
 import com.wind.commons.ServiceResult;
 import com.wind.entity.Link;
 import com.wind.service.ArticleLinkService;
@@ -34,23 +33,19 @@ public class Main {
 	private final static Logger logger = LoggerFactory.getLogger(Main.class);
 	@Resource
 	LinkService linkService;
-	
 	@Resource
 	ArticleLinkService articleLinkService;
-	
 	@Resource
 	ArticleService articleService;
-	
 	@Resource
 	IdsService idsService;
+	ExecutorService pool = Executors.newFixedThreadPool(20);
 	
 	public static int linkIsParse = 1;
 	public static int threadStartNum = 0;
 	public static int threadEndNum = 0;
-	public static boolean linkLockStatus = false;
-	public static boolean articleLockStatus = false;
 	
-	ExecutorService pool = Executors.newFixedThreadPool(20);
+	
 	@Test
 	public void main() {
 		idsService.initMongodbIds();
@@ -82,16 +77,17 @@ public class Main {
 			params.put("pstart", start);
 			params.put("plimit", limit);
 			ServiceResult<Link> linkResult = linkService.find(params);
+			
+			if(start >= 40) {
+				break;
+			}
+			
 			if(!linkResult.getList().isEmpty()) {
 				startThreadPool(linkResult.getList());
+				start += limit;
+			} else {
+				start = 0;
 			}
-			start += limit;
-		}
-		logger.info("threadStartNum: "+threadStartNum+", threadEndNum: "+threadEndNum +", 程序跑完！！！");
-		try {
-			Thread.sleep(1000);
-		} catch (InterruptedException e) {
-			e.printStackTrace();
 		}
 	}
 	

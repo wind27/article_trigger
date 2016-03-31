@@ -53,7 +53,7 @@ public class MongodbUtil {
 			if(mongoClient!=null) {
 				mongoClient.close();
 			}
-			logger.error("连接 mongodb 失败！！！");
+			logger.error("连接 mongodb 失败！！！", e);
 		}
     	return coll;
     }
@@ -105,7 +105,7 @@ public class MongodbUtil {
     		}
     		return documentList;
 		} catch (Exception e) {
-			logger.error("查询异常");
+			logger.error("查询异常", e);
 			return null;
 		}
     }
@@ -134,7 +134,7 @@ public class MongodbUtil {
     		}
     		return doc;
 		} catch (Exception e) {
-			logger.error("查询异常");
+			logger.error("查询异常", e);
 			return null;
 		}
     }
