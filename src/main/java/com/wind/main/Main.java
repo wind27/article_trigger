@@ -16,9 +16,11 @@ import org.slf4j.LoggerFactory;
 import org.springframework.test.context.ContextConfiguration;
 import org.springframework.test.context.junit4.SpringJUnit4ClassRunner;
 
+import com.wind.commons.ArticleThreadShareData;
 import com.wind.commons.Constant;
 import com.wind.commons.Constant.ArticleFrom;
 import com.wind.commons.Constant.ArticleHomeUrl;
+import com.wind.commons.LinkThreadShareData;
 import com.wind.commons.ServiceResult;
 import com.wind.entity.Link;
 import com.wind.service.ArticleLinkService;
@@ -44,7 +46,8 @@ public class Main {
 	public static int linkIsParse = 1;
 	public static int threadStartNum = 0;
 	public static int threadEndNum = 0;
-	
+	public static LinkThreadShareData linkThreadShareData = new LinkThreadShareData();
+	public static ArticleThreadShareData articleThreadShareData = new ArticleThreadShareData();
 	
 	@Test
 	public void main() {

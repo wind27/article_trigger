@@ -12,7 +12,7 @@ import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
 import com.wind.commons.Constant;
-import com.wind.commons.ThreadshareData;
+import com.wind.commons.LinkThreadShareData;
 import com.wind.commons.ServiceResult;
 import com.wind.entity.Article;
 import com.wind.entity.Link;
@@ -84,7 +84,8 @@ public class ArticleThread implements Runnable{
 		}
 	}
 	public void add() {
-		while(ThreadshareData.articleLockStatus == true) {
+		//加锁, 并录入 article 数据, 然后解锁
+		while(Main.articleThreadShareData.articleLockStatus == true) {
 			try {
 				Thread.sleep(10);
 				System.out.println(" article lock 等待中");
@@ -92,8 +93,7 @@ public class ArticleThread implements Runnable{
 				e.printStackTrace();
 			}
 		}
-		//加锁, 并录入 article 数据, 然后解锁
-		synchronized (ThreadshareData.class) {
+		synchronized (Main.articleThreadShareData) {
 			for(int i=0; i<articleUrl.size(); i++) {
 				String url = articleUrl.get(i);
 				
@@ -109,9 +109,12 @@ public class ArticleThread implements Runnable{
 					logger.info(url+":已保存");
 				}
 			}
-			ThreadshareData.articleLockStatus = true;
+			Main.articleThreadShareData.articleLockStatus = true;
 		}
-		while(ThreadshareData.linkLockStatus == true) {
+		
+		
+		////加锁, 并录入 link 数据, 然后解锁
+		while(Main.linkThreadShareData.linkLockStatus == true) {
 			try {
 				Thread.sleep(10);
 				System.out.println(" link lock 等待中");
@@ -119,9 +122,8 @@ public class ArticleThread implements Runnable{
 				e.printStackTrace();
 			}
 		}
-		synchronized (ThreadshareData.class) {
-			////加锁, 并录入 link 数据, 然后解锁
-			ThreadshareData.linkLockStatus = true;
+		synchronized (Main.linkThreadShareData) {
+			Main.linkThreadShareData.linkLockStatus = true;
 			for(int i=0; i<linkUrl.size(); i++) {
 				String url = linkUrl.get(i);
 				Map<String, Object> params = new HashMap<String, Object>();
@@ -139,7 +141,7 @@ public class ArticleThread implements Runnable{
 				}
 				
 			}
-			ThreadshareData.linkLockStatus = false;
+			Main.linkThreadShareData.linkLockStatus = false;
 		}
 	}
 	
