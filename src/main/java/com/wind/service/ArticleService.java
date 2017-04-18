@@ -8,7 +8,6 @@ import javax.annotation.Resource;
 
 import org.bson.BsonArray;
 import org.bson.BsonDocument;
-import org.bson.BsonInt32;
 import org.bson.BsonInt64;
 import org.bson.BsonString;
 import org.bson.Document;
@@ -16,7 +15,6 @@ import org.springframework.stereotype.Service;
 
 import com.mongodb.client.MongoCollection;
 import com.wind.commons.Constant.ServiceMsg;
-import com.wind.commons.ServiceResult;
 import com.wind.entity.Article;
 import com.wind.utils.DocumentArticleTransfer;
 import com.wind.utils.MongodbUtil;
@@ -46,51 +44,37 @@ public class ArticleService {
 	 * @param article
 	 * @return
 	 */
-	public ServiceResult<Article> add(Article article) {
-		ServiceResult<Article> result = new ServiceResult<Article>();
+	public boolean add(Article article) {
 		if(article==null) {
-			result.setSuccess(false);
-			result.setMsg(ServiceMsg.PARAMS_ERROR);
-			return result;
+			return false;
 		}
 		
 		//获取并插入自增主键id
 		MongoCollection<Document> coll = getColl();
 		long id = idsService.getNextIndex("article");
+
 		if(id==0) {
-			result.setSuccess(false);
-			result.setMsg(ServiceMsg.ID_INCREMENT_ERROR);
-			return result;
+			return false;
 		}
+
 		article.setId(id);
 		
 		//插入
 		Document doc = DocumentArticleTransfer.article2Document(article);
-		boolean flag = mongodbUtil.insert(coll, doc);
-		if(flag) {
-			result.setSuccess(true);
-			return result;
-		} else {
-			result.setSuccess(false);
-			result.setMsg(ServiceMsg.FAIL);
-			return result;
-		}
+		return mongodbUtil.insert(coll, doc);
 	}
 
 	/**
 	 *  批量插入
 	 * 
 	 * @author qianchun  @date 2016年3月3日 下午2:20:25
-	 * @param article
+	 * @param articleList
 	 * @return
 	 */
-	public ServiceResult<Article> batchAdd(List<Article> articleList) {
-		ServiceResult<Article> result = new ServiceResult<Article>();
-		
+	public boolean batchAdd(List<Article> articleList) {
+
 		if(articleList==null || articleList.size()==0) {
-			result.setSuccess(false);
-			result.setMsg(ServiceMsg.PARAMS_ERROR);
-			return result;
+			return false;
 		}
 		MongoCollection<Document> coll = getColl();
 		for(int i=0; i<articleList.size(); i++) {
@@ -98,9 +82,7 @@ public class ArticleService {
 			if(article!=null) {
 				long id = idsService.getNextIndex("article");
 				if(id==0) {
-					result.setSuccess(false);
-					result.setMsg(ServiceMsg.ID_INCREMENT_ERROR);
-					return result;
+					return false;
 				}
 				article.setId(id);
 			}
@@ -108,51 +90,50 @@ public class ArticleService {
 		
  		List<Document> docList = DocumentArticleTransfer.article2Document(articleList);
 		if(docList==null || docList.size()==0) {
-			result.setSuccess(false);
-			result.setMsg(ServiceMsg.PARAMS_ERROR);
-			return result;
+			return false;
 		}
-		boolean flag = mongodbUtil.batchInsert(coll, docList);
-		if(flag) {
-			result.setSuccess(true);
-			result.setMsg(ServiceMsg.SUCCESS);
-		} else {
-			result.setSuccess(false);
-			result.setMsg(ServiceMsg.FAIL);
-		}
-		return result;
+		return mongodbUtil.batchInsert(coll, docList);
 	}
 	
 	/**
 	 * 更新
 	 * 
 	 * @author qianchun  @date 2016年3月3日 下午2:32:23
-	 * @param params
+	 * @param id
+	 * @param article
 	 * @return
 	 */
-	public ServiceResult<Article> updateById(long id, Article article) {
-		ServiceResult<Article> result = new ServiceResult<Article>();
+	public boolean updateById(long id, Article article) {
 		if(id==0 || article==null) {
-			result.setSuccess(false);
-			result.setMsg(ServiceMsg.PARAMS_ERROR);
-			return result;
+			return false;
 		}
 		MongoCollection<Document> coll = getColl();
 		BsonDocument filter = new BsonDocument().append("id", new BsonInt64(id));
 		Document document = DocumentArticleTransfer.article2Document(article);
 		coll.findOneAndUpdate(filter, document);
 		document = mongodbUtil.findOneAndReplace(coll, filter, document);
-		if(document==null) {
-			result.setSuccess(false);
-			result.setMsg(ServiceMsg.SUCCESS);
-		} else {
-			result.setSuccess(true);
-			result.setMsg(ServiceMsg.FAIL);
-		}
-		return result;
+		return document!=null ? true : false;
 	}
 	
 	//---------------------------- 查询数据 -----------------------------------
+
+	/**
+	 * 根据条件查询查询一条数据
+	 * @param params
+	 * @return
+     */
+	public Article findOne(Map<String, Object> params) {
+
+		BsonDocument filter = new BsonDocument();
+		if(params!=null && params.get("original_link")!=null) {
+			filter.append("original_link", new BsonString(params.get("original_link").toString()));
+		}
+		Document document = mongodbUtil.findOne(getColl(), filter);
+		if(document!=null) {
+			return DocumentArticleTransfer.document2Article(document);
+		}
+		return null;
+	}
 	/**
 	 * 查询
 	 * 
@@ -160,49 +141,30 @@ public class ArticleService {
 	 * @param params
 	 * @return
 	 */
-	public ServiceResult<Article> find(Map<String, Object> params) {
-		ServiceResult<Article> result = new ServiceResult<Article>();
+	public List<Article> find(Map<String, Object> params, int start, int limit) {
 		List<Article> articleList = null;
-		MongoCollection<Document> coll = getColl();
-		
-		
-		Map<String, Object> filterParams = new HashMap<>();
-		BsonDocument filter = new BsonDocument(); 
+
+		BsonDocument filter = new BsonDocument();
 		if(params!=null && params.get("original_link")!=null) {
 			filter.append("original_link", new BsonString(params.get("original_link").toString()));
 		}
-		if(params!=null && params.get("pstart")!=null && params.get("plimit")!=null) {
-			filterParams.put("pstart", params.get("pstart"));
-			filterParams.put("plimit", params.get("plimit"));
-		}
-		filterParams.put("filter", filter);
-		List<Document> docList = mongodbUtil.find(coll, filterParams);
+		List<Document> docList = mongodbUtil.find(getColl(), filter, null, start, limit);
 		if(docList!=null) {
 			articleList = DocumentArticleTransfer.document2Article(docList);
 		}
-		result.setSuccess(true);
-		result.setList(articleList);
-		return result;
+		return articleList;
 	}
 	/**
 	 * 根据uids查询
 	 * 
 	 * @author qianchun  @date 2016年3月14日 下午2:53:59
 	 * @param uidList
-	 * @param pstart
-	 * @param plimit
 	 * @return
 	 */
-	public ServiceResult<Article> findByUids(List<Long> uidList, int pstart, int plimit) {
-		ServiceResult<Article> result = new ServiceResult<Article>();
-
+	public List<Article> findByUids(List<Long> uidList, int start, int limit) {
 		Map<String, Object> params = new HashMap<String, Object>();
 		//添加分页条件
-		if(plimit>0) {
-			params.put("pstart", pstart);
-			params.put("plimit", plimit);
-		}
-		
+
 		//添加查询条件
 		BsonDocument filter = null;
 		BsonArray bsonArray = new BsonArray();
@@ -223,14 +185,12 @@ public class ArticleService {
 		//查询
 		MongoCollection<Document> coll = getColl();
 		params.put("filter", filter);
-		List<Document> docList = mongodbUtil.find(coll, params);
+		List<Document> docList = mongodbUtil.find(coll, filter, null, start, limit);
 		List<Article> articleList = null;
 		if(docList!=null) {
 			articleList = DocumentArticleTransfer.document2Article(docList);
 		}
-		result.setSuccess(true);
-		result.setList(articleList);
-		return result;
+		return articleList;
 	}
 	/**
 	 * 根据id查询
@@ -239,17 +199,14 @@ public class ArticleService {
 	 * @param id
 	 * @return
 	 */
-	public ServiceResult<Article> findById(long id) {
-		ServiceResult<Article> result = new ServiceResult<Article>();
+	public Article findById(long id) {
 		Article article = null;
 		MongoCollection<Document> coll = getColl();
 		Document document = mongodbUtil.findById(coll, id);
 		if(document!=null) {
 			article = DocumentArticleTransfer.document2Article(document);
 		}
-		result.setSuccess(true);
-		result.setObject(article);
-		return result;
+		return article;
 	}
 	//-----------------------------------------------------------
 }

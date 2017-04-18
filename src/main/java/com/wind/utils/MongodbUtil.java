@@ -58,42 +58,59 @@ public class MongodbUtil {
     	return coll;
     }
     //---------------------------- 获取数据 -----------------------------------
-    /**
-     * 查询
-     * 
-     * @author qianchun  @date 2016年3月3日 下午2:22:42
-     * @param coll
-     * @param params
+
+	public Document findOne(MongoCollection<Document> coll, Bson filter) {
+		if(coll==null) {
+			return null;
+		}
+		try {
+			FindIterable<Document> iterator = null;
+			if(filter!=null) {
+                iterator = coll.find(filter);
+            } else {
+                iterator = coll.find();
+            }
+			MongoCursor<Document> cursor = iterator.iterator();
+			if(cursor!=null && cursor.hasNext()) {
+                return cursor.next();
+            }
+		} catch (Exception e) {
+			logger.error("查询异常", e);
+			return null;
+		}
+		return null;
+	}
+	/**
+	 * 根据条件查询
+	 * @param coll
+	 * @param filter
+	 * @param sort
+	 * @param start
+	 * @param limit
      * @return
      */
-    public List<Document> find(MongoCollection<Document> coll, Map<String, Object> params) {
+    public List<Document> find(MongoCollection<Document> coll, Bson filter, Bson sort, int start, int limit) {
     	if(coll==null) {
     		return null;
     	}
     	try {
     		List<Document> documentList = new ArrayList<Document>();
-    		Bson bson = null;
-    		Integer pstart = 0;
-    		Integer plimit = 0;
-    		
-    		FindIterable<Document> iterator = null;
-    		if(params!=null && params.get("filter")!=null) {
-    			bson = (Bson) params.get("filter");
-    			iterator = coll.find(bson);
-    		} else {
-    			iterator = coll.find();
-    		}
-    		
-    		if(params!=null && params.get("pstart")!=null && params.get("plimit")!=null) {
-    			pstart = (Integer) params.get("pstart");
-    			plimit = (Integer) params.get("plimit");
-    			iterator.skip(pstart).limit(plimit);
-    		}
-    		if(params!=null && params.get("sort")!=null) {
-    			BsonDocument sort = (BsonDocument) params.get("sort");
-    			iterator.sort(sort);
-    		}
-    		
+
+			FindIterable<Document> iterator = null;
+			if(filter!=null) {
+				iterator = coll.find(filter);
+			} else {
+				iterator = coll.find();
+			}
+
+			if(start>=0 && limit > 0) {
+				iterator.skip(start).limit(limit);
+			}
+
+			if(sort!=null) {
+				iterator.sort(sort);
+			}
+
     		MongoCursor<Document> cursor = iterator.iterator();
     		if(cursor!=null) {
     			while (cursor.hasNext()) {
@@ -109,12 +126,11 @@ public class MongodbUtil {
 			return null;
 		}
     }
-    /**
-     * find by id
-     * 
-     * @author qianchun  @date 2016年3月14日 下午3:03:00
-     * @param coll
-     * @param id
+
+	/**
+	 * 根据ID查询
+	 * @param coll
+	 * @param id
      * @return
      */
     public Document findById(MongoCollection<Document> coll, long id) {
@@ -138,6 +154,13 @@ public class MongodbUtil {
 			return null;
 		}
     }
+
+	/**
+	 * 根据条件统计
+	 * @param coll
+	 * @param filter
+     * @return
+     */
     public long count(MongoCollection<Document> coll, BsonDocument filter) {
     	if(coll==null) {
     		return 0;
@@ -150,13 +173,10 @@ public class MongodbUtil {
     	}
     }
     //---------------------------- 获取结束 -----------------------------------
-    
-    /**
-     * 插入
-     * 
-     * @author qianchun  @date 2016年3月3日 下午2:22:27
-     * @param coll
-     * @param doc
+	/**
+	 * 插入
+	 * @param coll
+	 * @param doc
      * @return
      */
     public boolean insert(MongoCollection<Document> coll, Document doc) {
@@ -172,12 +192,10 @@ public class MongodbUtil {
 		}
     }
     
-    /**
-     * 批量插入
-     * 
-     * @author qianchun  @date 2016年3月3日 下午2:22:08
-     * @param coll
-     * @param docList
+	/**
+	 * 批量插入
+	 * @param coll
+	 * @param docList
      * @return
      */
     public boolean batchInsert(MongoCollection<Document> coll, List<Document> docList) {
@@ -193,13 +211,11 @@ public class MongodbUtil {
 		}
     }
     
-    /**
-     * 修改
-     * 
-     * @author qianchun  @date 2016年3月3日 下午2:21:59
-     * @param coll
-     * @param filter
-     * @param update
+	/**
+	 * 根据条件替换一条
+	 * @param coll
+	 * @param filter
+	 * @param document
      * @return
      */
 	public Document findOneAndReplace(MongoCollection<Document> coll, Bson filter, Document document) {
@@ -215,49 +231,21 @@ public class MongodbUtil {
 		}
     }
     //----------------------------------------------------------------------------------
-    /**
-     * 批量修改
-     * 
-     * @author qianchun  @date 2016年3月3日 下午2:21:50
-     * @param coll
-     * @param filter
-     * @param update
+	/**
+	 * 修改
+	 * @param coll
+	 * @param filter
+	 * @param document
      * @return
      */
-    @SuppressWarnings("unused")
-	private Document batchUpdate(MongoCollection<Document> coll, Bson filter, Document document) {
+	public boolean update(MongoCollection<Document> coll, Bson filter, Bson document) {
     	if(coll==null) {
     		logger.error("连接 mongo 库失败!!!");
-    		return null;
-    	}
-    	try {
-    		UpdateResult result = coll.updateMany(filter, document);
-    		return document;
-    	} catch (Exception e) {
-    		logger.error("批量修改失败！！！", e);
-			return null;
-		}
-    }
-    
-    /**
-     * 根据条件替换
-     * 
-     * @author qianchun  @date 2016年3月3日 下午4:23:11
-     * @param coll
-     * @param filter
-     * @param update
-     * @return
-     */
-    @SuppressWarnings("unused")
-	private boolean replace(MongoCollection<Document> coll, Bson filter, Document document) {
-    	if(coll==null) {
     		return false;
     	}
     	try {
-    		Document doc = coll.findOneAndReplace(filter, document);
-    		JSONObject obj = JSONObject.fromObject(doc);
-    		System.out.println(obj.toString());
-    		return true;
+    		UpdateResult result = coll.updateMany(filter, document);
+    		return result.wasAcknowledged();
     	} catch (Exception e) {
     		logger.error("批量修改失败！！！", e);
 			return false;

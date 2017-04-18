@@ -171,13 +171,13 @@ public class Constant {
     	public static final String CNBLOGS= "http://www.cnblogs.com";//博客园
     }
     //--------------------------------- link constant-----------------------------------------
-    public class LinkIsParse {
-    	public static final int YES = 1;
-    	public static final int NO = 0;
+    public class LINK_IS_PARSE {
+        public static final int NO = 0;
+    	public static final int ING = 1;
+    	public static final int YES = 2;
     }
-    public static final int LINK_START_THREAD = 0;
-    public static final int LINK_END_THREAD = 0;
-    
+    public static final int LINK_MAX_THREAD = 20;
+
     //--------------------------------- comment constant-----------------------------------------
     //评论根路径父ID
     public static final int COMMENT_ROOT_PID = 0;
@@ -216,5 +216,29 @@ public class Constant {
     	public static final String COLLECTION_LINK = "link";
     	public static final String COLLECTION_ARTICLE = "article";
     	public static final String COLLECTION_ARTICLE_LINK = "article_link";
+    }
+
+
+    //************************************************** rabbitmq ******************************************************
+
+    /**
+     * rabbitmq exchange
+     */
+    public class RabbitmqExchange {
+        public static final String ARTICLE = "article_exchange";
+        public static final String ARTICLE_LINK = "article_link_exchange";
+    }
+
+    /**
+     * rabbitmq queue
+     */
+    public class RabbitmqQueue {
+        public static final String ARTICLE = "article_queue";
+        public static final String ARTICLE_LINK = "article_link_queue";
+    }
+
+    public class RabbitmqRoutingKey {
+        public static final String ARTICLE = "article_routing";
+        public static final String ARTICLE_LINK = "article_link_routing";
     }
 }

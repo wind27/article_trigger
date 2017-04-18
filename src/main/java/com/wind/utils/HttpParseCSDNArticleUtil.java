@@ -1,8 +1,10 @@
 package com.wind.utils;
 
-import java.util.HashMap;
-import java.util.Map;
-
+import com.wind.commons.Constant;
+import com.wind.commons.Constant.ArticleFrom;
+import com.wind.entity.Article;
+import net.sf.json.JSONArray;
+import net.sf.json.JSONObject;
 import org.apache.commons.lang3.StringUtils;
 import org.htmlparser.Node;
 import org.htmlparser.NodeFilter;
@@ -10,30 +12,95 @@ import org.htmlparser.Parser;
 import org.htmlparser.filters.AndFilter;
 import org.htmlparser.filters.HasAttributeFilter;
 import org.htmlparser.filters.TagNameFilter;
+import org.htmlparser.tags.LinkTag;
 import org.htmlparser.util.NodeList;
 import org.htmlparser.util.ParserException;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.stereotype.Service;
 
-import com.wind.commons.Constant;
-import com.wind.commons.Constant.ArticleFrom;
-import com.wind.entity.Article;
-
-import net.sf.json.JSONArray;
-import net.sf.json.JSONObject;
+import java.util.ArrayList;
+import java.util.HashMap;
+import java.util.List;
+import java.util.Map;
 
 @Service
-public class CSDNBlogUtil {
-	private final static Logger logger = LoggerFactory.getLogger(CSDNBlogUtil.class);
+public class HttpParseCSDNArticleUtil {
+	private final static Logger logger = LoggerFactory.getLogger(HttpParseCSDNArticleUtil.class);
 
+
+	/**
+	 * http 请求获取该URL下的所有URL地址
+	 *
+	 * @param url
+	 * @return
+	 */
+	public static List<String> httpGetLinkUrls(String url) {
+		Map<String, String> headers = HttpHeaderUtil.getHeader();
+		JSONObject result = HttpUtil.get(url, headers);
+		if (result != null) {
+			Object obj = result.get("content");
+			if (obj != null) {
+				return parseAllUrlFromHtml(obj.toString());
+			}
+		}
+		return null;
+	}
+
+	/**
+	 * 获取html获取其中的所有URL
+	 *
+	 * @author qianchun  @date 2016年3月24日 下午4:22:39
+	 * @param html
+	 * @return
+	 */
+	public static List<String> parseAllUrlFromHtml(String html) {
+		try {
+			List<String> linkAllUrlList = new ArrayList<>();
+
+			Parser linkParser = new Parser(html);
+			TagNameFilter linkTagFilter = new TagNameFilter("a");
+
+			NodeList linkNodes = linkParser.parse(linkTagFilter);
+			for(int i=0; i<linkNodes.size(); i++) {
+				LinkTag linkTag = (LinkTag) linkNodes.elementAt(i);
+				String linkUrl = linkTag.getAttribute("href");
+				if(StringUtils.isBlank(linkUrl) || linkUrl.length()>100) {
+					continue;
+				}
+				//以http://开头,但不是csdn blog 的域名,则排除
+				if(linkUrl.startsWith("http://")
+						&& !linkUrl.startsWith(Constant.ArticleHomeUrl.CSDNBLOGS)) {
+					continue;
+				}
+
+				//不以http://开头,则默认加上 csdn blog 的域名
+				if(!linkUrl.startsWith("http://") && !linkUrl.startsWith("https://")) {
+					linkUrl = Constant.ArticleHomeUrl.CSDNBLOGS + linkUrl;
+				}
+
+				if(!linkAllUrlList.contains(linkUrl)) {
+					linkAllUrlList.add(linkUrl);
+				}
+			}
+			return linkAllUrlList;
+		} catch (ParserException e) {
+			e.printStackTrace();
+		}
+		return null;
+	}
+
+	//******************************************************************************************************************
+
+	/**
+	 * http 请求获取该URL对应的article
+	 *
+	 * @param url
+	 * @return
+     */
 	public static Map<String, String> httpGetArticle(String url) {
 		Map<String, String> resultMap = new HashMap<>();
-		Map<String, String> headers = new HashMap<String, String>();
-		headers.put("Accept", "text/html,application/xhtml+xml,application/xml;q=0.9,image/webp,*/*;q=0.8");
-		headers.put("User-Agent", "Mozilla/5.0 (Windows NT 6.1; WOW64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/46.0.2490.86 Safari/537.36");
-		headers.put("Accept-Encoding", "gzip, deflate, sdch");
-		headers.put("Accept-Language", "zh-CN,zh;q=0.8");
+		Map<String, String> headers = HttpHeaderUtil.getHeader();
 		JSONObject result = HttpUtil.get(url, headers);
 		if(result!=null) {
 			Object obj = result.get("content");
@@ -87,7 +154,7 @@ public class CSDNBlogUtil {
 		return null;
 	}
 	
-	public static Article getArticle(String url) {
+	public static Article getArticleByUrl(String url) {
 		JSONArray emptyArray = new JSONArray();
 		Map<String, String> resultMap = httpGetArticle(url);
 		if(resultMap==null || resultMap.get("title")==null && resultMap.get("content")==null) {
@@ -160,6 +227,7 @@ public class CSDNBlogUtil {
 	}
 	public static void main(String[] args) {
 		String url = "http://blog.csdn.net/u011680118/article/details/51011220";
-		getArticle(url);
+		Article article = getArticleByUrl(url);
+		System.out.println(JSONObject.fromObject(article).toString());
 	}
 }

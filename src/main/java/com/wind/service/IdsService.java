@@ -2,10 +2,8 @@ package com.wind.service;
 
 import javax.annotation.Resource;
 
-import org.bson.BsonDocument;
-import org.bson.BsonInt32;
-import org.bson.BsonString;
-import org.bson.Document;
+import org.apache.commons.lang.StringUtils;
+import org.bson.*;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.stereotype.Service;
@@ -13,8 +11,6 @@ import org.springframework.stereotype.Service;
 import com.mongodb.client.MongoCollection;
 import com.mongodb.client.MongoCursor;
 import com.mongodb.client.model.FindOneAndUpdateOptions;
-import com.wind.commons.Constant.MongoName;
-import com.wind.commons.ServiceResult;
 import com.wind.utils.MongodbUtil;
 
 @Service
@@ -116,7 +112,7 @@ public class IdsService {
 			}
 			return ;
 		} catch (Exception e) {
-			logger.error("mongodb 创建 Ids 失败");
+			logger.error("mongodb 创建 Ids 失败", e);
 			return ;
 		}
 	}
@@ -137,7 +133,7 @@ public class IdsService {
     	try {
     		BsonDocument filter = new BsonDocument().append("name", new BsonString(collectionName));
     		
-    		BsonDocument seqBson = new BsonDocument().append("next_index", new BsonInt32(1));
+    		BsonDocument seqBson = new BsonDocument().append("next_index", new BsonInt64(1));
     		BsonDocument document = new BsonDocument().append("$inc", seqBson);
     		FindOneAndUpdateOptions option = new FindOneAndUpdateOptions();
     		option.upsert(true);
@@ -146,7 +142,9 @@ public class IdsService {
     			logger.error("获取下一个主键 id失败！！！");
     			return 0;
     		}
-    		long nextIndex = nextIndexDoc.getLong("next_index");
+
+
+			long nextIndex = nextIndexDoc.getLong("next_index");
     		return nextIndex;
 		} catch (Exception e) {
 			logger.error("获取下一个主键 id异常！！！", e);

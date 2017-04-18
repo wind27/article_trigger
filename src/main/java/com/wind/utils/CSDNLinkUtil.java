@@ -23,74 +23,71 @@ import net.sf.json.JSONObject;
 
 @Service
 public class CSDNLinkUtil {
-	private final static Logger logger = LoggerFactory.getLogger(CSDNLinkUtil.class);
-	
-	private static List<String> linkAllUrlList = new ArrayList<>();
+    private final static Logger logger = LoggerFactory.getLogger(CSDNLinkUtil.class);
 
-	public static Map<String, List<String>> httpGetLink(String url) {
-		Map<String, List<String>> resultMap = new HashMap<>();
-		Map<String, String> headers = new HashMap<String, String>();
-		headers.put("Accept", "text/html,application/xhtml+xml,application/xml;q=0.9,image/webp,*/*;q=0.8");
-		headers.put("User-Agent", "Mozilla/5.0 (Windows NT 6.1; WOW64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/46.0.2490.86 Safari/537.36");
-		headers.put("Accept-Encoding", "gzip, deflate, sdch");
-		headers.put("Accept-Language", "zh-CN,zh;q=0.8");
-		JSONObject result = HttpUtil.get(url, headers);
-		if(result!=null) {
-			Object obj = result.get("content");
-			if(obj!=null) {
-				resultMap = getAllUrl(obj.toString());
-			}
-		}
-		return resultMap;
-	}
-	
-	/**
-	 * 获取文章信息
-	 * 
-	 * @author qianchun  @date 2016年3月24日 下午4:22:39
-	 * @param html
-	 * @return
-	 */
-	public static Map<String, List<String>> getAllUrl(String html) {
-		try {
-			Map<String, List<String>> resultMap = new HashMap<>();
-			Parser linkParser = new Parser(html);
-			TagNameFilter linkTagFilter = new TagNameFilter("a");
+    private static List<String> linkAllUrlList = new ArrayList<>();
 
-			NodeList linkNodes = linkParser.parse(linkTagFilter); 
-			for(int i=0; i<linkNodes.size(); i++) {
-				LinkTag linkTag = (LinkTag) linkNodes.elementAt(i);
-				String linkUrl = linkTag.getAttribute("href");
-				
-				if(StringUtils.isBlank(linkUrl) || linkUrl.length()>100) {
-					continue;
-				}
-				
-				if(!linkUrl.contains(Constant.ArticleHomeUrl.CSDNBLOGS)) {
-					linkUrl = Constant.ArticleHomeUrl.CSDNBLOGS + linkUrl;
-				}
-				
-				if(!linkAllUrlList.contains(linkUrl)) {
-					linkAllUrlList.add(linkUrl);
-				}
-			}
-			resultMap.put("link", linkAllUrlList);
-			return resultMap;
-		} catch (ParserException e) {
-			e.printStackTrace();
-		}
-		return null;
-	}
-	
-	public static List<String> getLinks(String url) {
-		Map<String, List<String>> resultMap = httpGetLink(url);
-		if(resultMap==null || resultMap.get("link")==null) {
-			return null;
-		}
-		return resultMap.get("link");
-	}
-	public static void main(String[] args) {
-		List<String> linkList = getLinks("http://blog.csdn.net");
-		System.out.println(JSONArray.fromObject(linkList));
-	}
+//    /**
+//     * http 请求获取该URL下的所有URL地址
+//     *
+//     * @param url
+//     * @return
+//     */
+//    public static List<String> httpGetLinkUrls(String url) {
+//        Map<String, String> headers = HttpHeaderUtil.getHeader();
+//        JSONObject result = HttpUtil.get(url, headers);
+//        if (result != null) {
+//            Object obj = result.get("content");
+//            if (obj != null) {
+//                return parseAllUrlFromHtml(obj.toString());
+//            }
+//        }
+//        return null;
+//    }
+//
+//    /**
+//	 * 获取html获取其中的所有URL
+//	 *
+//	 * @author qianchun  @date 2016年3月24日 下午4:22:39
+//	 * @param html
+//	 * @return
+//	 */
+//	public static List<String> parseAllUrlFromHtml(String html) {
+//		try {
+//			Parser linkParser = new Parser(html);
+//			TagNameFilter linkTagFilter = new TagNameFilter("a");
+//
+//			NodeList linkNodes = linkParser.parse(linkTagFilter);
+//			for(int i=0; i<linkNodes.size(); i++) {
+//				LinkTag linkTag = (LinkTag) linkNodes.elementAt(i);
+//				String linkUrl = linkTag.getAttribute("href");
+//				if(StringUtils.isBlank(linkUrl) || linkUrl.length()>100) {
+//					continue;
+//				}
+//				//以http://开头,但不是csdn blog 的域名,则排除
+//				if(linkUrl.startsWith("http://")
+//						&& !linkUrl.startsWith(Constant.ArticleHomeUrl.CSDNBLOGS)) {
+//					continue;
+//				}
+//
+//				//不以http://开头,则默认加上 csdn blog 的域名
+//				if(!linkUrl.startsWith("http://") && !linkUrl.startsWith("https://")) {
+//					linkUrl = Constant.ArticleHomeUrl.CSDNBLOGS + linkUrl;
+//				}
+//
+//				if(!linkAllUrlList.contains(linkUrl)) {
+//					linkAllUrlList.add(linkUrl);
+//				}
+//			}
+//			return linkAllUrlList;
+//		} catch (ParserException e) {
+//			e.printStackTrace();
+//		}
+//		return null;
+//	}
+
+//    public static void main(String[] args) {
+//        List<String> linkList = httpGetLinkUrls("http://blog.csdn.net");
+//        System.out.println(JSONArray.fromObject(linkList));
+//    }
 }

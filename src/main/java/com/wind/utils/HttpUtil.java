@@ -9,6 +9,7 @@ import java.util.Map;
 import org.apache.commons.lang3.StringUtils;
 import org.apache.http.HttpEntity;
 import org.apache.http.HttpResponse;
+import org.apache.http.client.config.RequestConfig;
 import org.apache.http.client.methods.HttpGet;
 import org.apache.http.impl.client.CloseableHttpClient;
 import org.apache.http.impl.client.HttpClientBuilder;
@@ -24,13 +25,23 @@ public class HttpUtil {
 	public String post() {
 		return "";
 	}
+
+	/**
+	 * http 请求获取请求结果content
+	 * @param url
+	 * @param headerMap
+     * @return
+     */
 	public static JSONObject get(String url, Map<String, String> headerMap) {
 		JSONObject resultJson = new JSONObject();
 
 		HttpClientBuilder httpClientBuilder = HttpClientBuilder.create();
 		CloseableHttpClient closeableHttpClient = httpClientBuilder.build();
+
 		try {
 			HttpGet httpGet = new HttpGet(url);
+			RequestConfig requestConfig = RequestConfig.custom().setSocketTimeout(1000).setConnectTimeout(1000).build();//设置请求和传输超时时间
+			httpGet.setConfig(requestConfig);
 			if(headerMap!=null) {
 				Iterator<String> it = headerMap.keySet().iterator();
 				while(it.hasNext()) {
